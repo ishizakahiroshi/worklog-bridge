@@ -1,0 +1,18 @@
+{
+  "name": "worklog-bridge",
+  "version": "0.1.0-dev",
+  "private": true,
+  "description": "Bridge time-clock entries and actual work hours by reconstructing real working time from local signals (PC/git/SSH/Claude/servers) and writing to Google Sheets — local-only CLI.",
+  "license": "MIT",
+  "author": "ishizakahiroshi <ishizakahiroshi.dev@gmail.com>",
+  "type": "module",
+  "scripts": {
+    "prepare": "husky",
+    "scan": "node scripts/secrets-scan.mjs --all-tracked --dry-run",
+    "scan:staged": "node scripts/secrets-scan.mjs --staged --block",
+    "scan:json": "node scripts/secrets-scan.mjs --all-tracked --dry-run --format=json"
+  },
+  "devDependencies": {
+    "husky": "^9.1.7"
+  }
+}
