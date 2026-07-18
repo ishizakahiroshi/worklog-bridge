@@ -71,3 +71,6 @@ config.local.toml
 .terraform/
 .serverless/
 **/supabase/.temp/
+
+# docsweep: backup snapshots (30-day retention, auto-cleanup)
+.docsweep/
