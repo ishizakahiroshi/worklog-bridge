@@ -6,17 +6,11 @@ fresh public clone でも有効な内容に保つこと。 -->
 
 ## プロジェクト概要
 
-<!-- TODO: 1〜2 段落で、このプロジェクトが何で、誰のためのもので、何を解決するかを書く。
-README から重複してでも、AI が常時ロードして思考の前提にできる粒度で。 -->
-
 勤怠システムに記録される「申請打刻」と、実際にキーボードを打っていた「実勤務時間」の乖離を埋めるための個人 OSS CLI。PC イベントログ・git commit・SSH 接続・Claude Code セッション・各業務サーバーへのアクセス履歴といった**多源シグナル**をローカルで収集し、実勤務時間を機械的に再構成して Google Sheets に書き出す。残業の根拠データを残すことが本質的な目的。
 
 スコープ: フルリモート前提のローカル CLI（`npx worklog-bridge`）。**個人 VPS には業務データを集約しない**（セキュリティリスク回避）。集計・割増計算・申請書生成も本 CLI で完結（既存 GAS は廃止移植）。
 
 ## やらないこと（スコープ外）
-
-<!-- TODO: 「機能追加の打診」を AI から防ぐため、明示的に切り捨てている範囲を列挙する。
-例: GUI / exe 化 / 複数 DB 対応 / 自動アップデート / 多言語 UI 等。 -->
 
 - 出社日のオフィス機器ログ収集（全員フルリモート前提）
 - 業務サーバーへの SSH 鍵を個人 VPS へ集約する設計（セキュリティリスク）
@@ -40,8 +34,7 @@ README から重複してでも、AI が常時ロードして思考の前提に�
 
 ## ディレクトリ構成
 
-<!-- TODO: ルート直下の主要フォルダ・ファイルを 1 行解説付きで列挙する。
-詳細は別ドキュメントに譲ってよい。 -->
+以下は実装後の構成案（未実装）。現時点で実在するのは `README.md` / `LICENSE` / `package.json` / `scripts/`（secrets-scan 一式・hook インストーラ）/ `.github/workflows/secrets-scan.yml` / `docs/local/`（gitignored）のみ。`src/` / `tsconfig.json` / `config.example.toml` / `docs/setup.md` 等・`release.yml` は未作成。
 
 ```
 worklog-bridge/
@@ -68,9 +61,13 @@ worklog-bridge/
 
 ## 主要コマンド
 
-<!-- TODO: 開発・テスト・ビルドのよく使うコマンドを 1 行ずつ。 -->
+現時点で使えるコマンド（secrets-scan のみ実装済み）:
 
-未実装。実装後に以下を埋める想定:
+- 全追跡ファイル scan: `pnpm scan`
+- staged のみ scan（block）: `pnpm scan:staged`
+- JSON 出力: `pnpm scan:json`
+
+CLI 本体は未実装。実装後に以下を埋める想定:
 
 - 開発: `pnpm dev`
 - テスト: `pnpm test`
@@ -78,26 +75,23 @@ worklog-bridge/
 - ビルド: `pnpm build`
 - 配布実行（インストール後）: `npx worklog-bridge collect` / `npx worklog-bridge sync`
 
-## 運用ルール（このプロジェクト固有）
+## AI 作業共通ルール
 
-グローバル `~/.claude/CLAUDE.md` の規約（md 命名・フッター・ビルド/コミット抑制・承認フォーマット等）に従う。加えて worklog-bridge 固有:
+ビルド・コミット禁止、secrets-scan 責務（4 層防御の層 1）、plan/bugfix/pending md の作成ルール等の AI 作業共通ルールは、各利用者のグローバル AI 設定に従う（作者環境の例: `~/.claude/CLAUDE.md` および `~/.claude/guides/`）。
+
+## 運用ルール（このプロジェクト固有）
 
 - **社員番号・社内サーバー名・社内プロジェクト名・実 Sheets ID は OSS リポに含めない**。設定ファイル（`~/.worklog-bridge/`）に分離し、`.gitignore` で個人設定を遮断する。サンプル設定（`config.example.toml`）の固有名詞は全て一般化する（「案件A」「ProjectAlpha」等）
 - **業務データはローカル CLI 内で完結**させ、個人 VPS や第三者サーバーへ集約しない
-- **本リポジトリへのコミット・ビルド・公開はユーザー指示があるまで実行しない**（house 標準）
 - 親 plan と検討プロセスの資料（HTML 4 件・retrospective・handoff）は本リポの `docs/local/` 配下に集約済み（git 追跡対象外）。公開向けドキュメントを書く場合は `docs/` 直下に置く
 
-## secrets-scan (kb-first・4 層防御の一次防御)
+## secrets-scan (kb-first・4 層防御の原型プロジェクト)
 
-公開ファイル（`README*` / `CLAUDE.md` / `AGENTS.md` / `src/**` / `dist/**` / packaged tarball）を新規作成・大改訂する瞬間、以下を AI 自身の責務として実行する:
+層 1（書く瞬間の自問）の一般責務はグローバル `~/.claude/CLAUDE.md`「公開対象ファイル作成時の secrets-scan 責務」に従う。本リポは 4 層防御の**原型プロジェクト**であり、以下が本リポ固有の実装:
 
-- **親 plan（`docs/local/`・gitignored）からの文言転記時**は、外部 KB の表示名列（`companies.short_name` / `people.name` / `servers.host` / `applications.name`）と family display name を必ず一般化する（「特定の顧客」「ユーザー」「A 拠点」等）。KB の物理位置は `scripts/secrets-scan.mjs` の `KB_ROOT` 設定を参照
-- **テスト fixture / 例示 / サンプル**には動作確認の実値を貼らない。最初から合成データで書く（詳細メモリ: `~/.claude/memory/feedback-test-fixtures-must-be-synthetic.md`）
-- 不安なら手で `node scripts/secrets-scan.mjs --staged --block` を実行して検証
-
-機械的な層: husky pre-commit (層 2) / GitHub Actions secrets-scan (層 3) / release skill 前提チェック (層 4) が自動で走るが、**書く瞬間の自問が一次防御**。事後 grep は保険であり、層 1 を素通りすると git 履歴に永続化して filter-repo 必要（破壊的）。
-
-設計詳細: `docs/local/secrets-scan-design/index.html` / 経緯: `docs/local/incident-public-repo-leak/index.html` / 関連原則: `~/.claude/guides/reference_release-pipeline.md` P10
+- 手動検証コマンド: `node scripts/secrets-scan.mjs --staged --block`（pnpm 経由は「主要コマンド」の `pnpm scan` 系を参照）。KB の物理位置は `scripts/secrets-scan.mjs` の `KB_ROOT` 設定を参照
+- 機械層の配線: husky pre-commit（層 2）/ `.github/workflows/secrets-scan.yml`（層 3）/ release skill 前提チェック（層 4）
+- 設計詳細: `docs/local/secrets-scan-design/index.html` / 経緯: `docs/local/incident-public-repo-leak/index.html` / 関連原則: `~/.claude/guides/reference_release-pipeline.md` P10
 
 ## 関連ドキュメント
 
@@ -107,5 +101,5 @@ worklog-bridge/
 | Codex/他 AI 用入口 | `AGENTS.md` |
 | ローカル作業ノート（非公開） | `docs/local/`（存在する場合） |
 | 親 plan（本リポ内・非公開） | `docs/local/plan_worklog-automation.md` |
-| 次セッション引継ぎ（本リポ内・非公開） | `docs/local/handoff_2026-06-22.md` |
+| 次セッション引継ぎ（本リポ内・非公開） | `docs/local/handoff_2026-06-22.md` / `docs/local/handoff_2026-06-22_part2.md` |
 | 既存 GAS（移植元・本リポ外） | ローカル個人ドライブ内 GAS（OSS リポには含めない） |
